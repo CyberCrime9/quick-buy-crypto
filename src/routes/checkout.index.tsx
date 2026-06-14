@@ -252,7 +252,7 @@ function CheckoutPage() {
       ...r.data,
       shippingCourierName: selectedCourier?.name || "",
     }));
-    navigate({ to: "/checkout/payment" });
+    navigate({ to: "/checkout/method" });
   };
 
   const fieldInput = (k: keyof Form, label: string, type = "text", required = true) => (
