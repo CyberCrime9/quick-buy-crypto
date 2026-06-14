@@ -1,16 +1,24 @@
 import { createFileRoute, useNavigate, Link } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
+import { z } from "zod";
 import { EtsyShell } from "@/components/EtsyShell";
 import { useCart, clearCart } from "@/lib/cart";
-import { PAYMENT_CONFIG } from "@/config/payment";
+import { PAYMENT_METHODS, type PaymentMethod } from "@/config/payment";
 import { Copy, RefreshCw, Upload, CheckCircle2 } from "lucide-react";
 
+const searchSchema = z.object({
+  method: z.enum(["btc", "eth", "usdt"]).default("btc"),
+});
+
 export const Route = createFileRoute("/checkout/payment")({
+  validateSearch: searchSchema,
   component: PaymentPage,
 });
 
 function PaymentPage() {
   const navigate = useNavigate();
+  const { method } = Route.useSearch() as { method: PaymentMethod };
+  const m = PAYMENT_METHODS[method];
   const { items, subtotal } = useCart();
   const [rate, setRate] = useState<number | null>(null);
   const [rateLoading, setRateLoading] = useState(false);
@@ -18,7 +26,7 @@ function PaymentPage() {
   const [proof, setProof] = useState<File | null>(null);
   const [proofError, setProofError] = useState<string | null>(null);
   const [copiedAddr, setCopiedAddr] = useState(false);
-  const [copiedBtc, setCopiedBtc] = useState(false);
+  const [copiedAmt, setCopiedAmt] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [checkout, setCheckout] = useState<any>(null);
 
@@ -36,9 +44,10 @@ function PaymentPage() {
     setRateLoading(true);
     setRateError(false);
     try {
-      const r = await fetch("https://api.coingecko.com/api/v3/simple/price?ids=bitcoin&vs_currencies=usd");
+      const r = await fetch(`https://api.coingecko.com/api/v3/simple/price?ids=${m.coingeckoId}&vs_currencies=usd`);
       const j = await r.json();
-      if (j?.bitcoin?.usd) setRate(j.bitcoin.usd);
+      const v = j?.[m.coingeckoId]?.usd;
+      if (v) setRate(v);
       else setRateError(true);
     } catch {
       setRateError(true);
@@ -47,12 +56,12 @@ function PaymentPage() {
     }
   };
 
-
   useEffect(() => {
     fetchRate();
     const iv = setInterval(fetchRate, 30000);
     return () => clearInterval(iv);
-  }, []);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [method]);
 
   if (items.length === 0) {
     return (
@@ -65,12 +74,12 @@ function PaymentPage() {
     );
   }
 
-  const btcAmount = rate ? (grandTotal / rate).toFixed(8) : "—";
+  const cryptoAmount = rate ? (grandTotal / rate).toFixed(m.decimals) : "—";
 
-  const copy = (text: string, which: "addr" | "btc") => {
+  const copy = (text: string, which: "addr" | "amt") => {
     navigator.clipboard.writeText(text).then(() => {
       if (which === "addr") { setCopiedAddr(true); setTimeout(() => setCopiedAddr(false), 1500); }
-      else { setCopiedBtc(true); setTimeout(() => setCopiedBtc(false), 1500); }
+      else { setCopiedAmt(true); setTimeout(() => setCopiedAmt(false), 1500); }
     });
   };
 
@@ -105,7 +114,8 @@ function PaymentPage() {
       shippingCost,
       shippingCourier: checkout.shippingCourierName || checkout.shippingCourier,
       total: grandTotal,
-      btcAmount,
+      paymentMethod: m.ticker,
+      cryptoAmount,
       proofName: proof.name,
       proofSize: proof.size,
       placedAt: new Date().toISOString(),
@@ -115,9 +125,8 @@ function PaymentPage() {
     setTimeout(() => navigate({ to: "/order-confirmed" }), 400);
   };
 
-
   return (
-    <EtsyShell back={{ to: "/checkout", label: "Back to details" }}>
+    <EtsyShell back={{ to: "/checkout/method", label: "Back to payment methods" }}>
       <h1 className="text-2xl font-semibold mb-6" style={{ fontFamily: 'Georgia, "Times New Roman", serif' }}>Payment</h1>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
@@ -125,13 +134,13 @@ function PaymentPage() {
           <div className="border-2 border-[#222] rounded-lg p-5">
             <div className="flex items-center justify-between mb-4">
               <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-full bg-[#f7931a] flex items-center justify-center text-white font-bold">₿</div>
+                <div className="w-10 h-10 rounded-full flex items-center justify-center text-white font-bold" style={{ backgroundColor: m.color }}>{m.symbol}</div>
                 <div>
-                  <p className="font-semibold">Bitcoin (BTC)</p>
-                  <p className="text-xs text-[#5e5e5e]">Pay with cryptocurrency</p>
+                  <p className="font-semibold">{m.name} ({m.ticker})</p>
+                  <p className="text-xs text-[#5e5e5e]">Network: {m.network}</p>
                 </div>
               </div>
-              <span className="text-xs bg-[#222] text-white px-2 py-1 rounded">Selected</span>
+              <Link to="/checkout/method" className="text-xs text-[#a05c00] underline">Change</Link>
             </div>
 
             <div className="bg-[#fafafa] border border-[#e1e3df] rounded p-4 space-y-3">
@@ -140,8 +149,8 @@ function PaymentPage() {
                 <p className="text-2xl font-bold">USD {grandTotal.toFixed(2)}</p>
               </div>
               <div className="flex items-center gap-2 text-sm">
-                <span className="text-[#5e5e5e]">Live BTC rate:</span>
-                {rateLoading ? <span>Updating…</span> : rateError ? <span className="text-[#d9534f]">Unavailable</span> : <span>1 BTC = USD {rate?.toLocaleString()}</span>}
+                <span className="text-[#5e5e5e]">Live {m.ticker} rate:</span>
+                {rateLoading ? <span>Updating…</span> : rateError ? <span className="text-[#d9534f]">Unavailable</span> : <span>1 {m.ticker} = USD {rate?.toLocaleString()}</span>}
                 <button onClick={fetchRate} className="ml-1 text-[#5e5e5e] hover:text-[#222]" aria-label="Refresh">
                   <RefreshCw className={`w-3.5 h-3.5 ${rateLoading ? "animate-spin" : ""}`} />
                 </button>
@@ -149,23 +158,35 @@ function PaymentPage() {
               <div>
                 <p className="text-xs text-[#5e5e5e] mb-1">Amount to send</p>
                 <div className="flex items-center gap-2 bg-white border border-[#e1e3df] rounded px-3 py-2">
-                  <span className="font-mono text-lg flex-1">{btcAmount} BTC</span>
-                  <button onClick={() => copy(btcAmount, "btc")} className="text-xs inline-flex items-center gap-1 text-[#5e5e5e] hover:text-[#222]">
-                    {copiedBtc ? <><CheckCircle2 className="w-4 h-4" /> Copied</> : <><Copy className="w-4 h-4" /> Copy</>}
+                  <span className="font-mono text-lg flex-1">{cryptoAmount} {m.ticker}</span>
+                  <button onClick={() => copy(cryptoAmount, "amt")} className="text-xs inline-flex items-center gap-1 text-[#5e5e5e] hover:text-[#222]">
+                    {copiedAmt ? <><CheckCircle2 className="w-4 h-4" /> Copied</> : <><Copy className="w-4 h-4" /> Copy</>}
                   </button>
                 </div>
               </div>
-              <div>
-                <p className="text-xs text-[#5e5e5e] mb-1">Send to this BTC address</p>
-                <div className="flex items-center gap-2 bg-white border border-[#e1e3df] rounded px-3 py-2">
-                  <span className="font-mono text-sm break-all flex-1">{PAYMENT_CONFIG.btcAddress}</span>
-                  <button onClick={() => copy(PAYMENT_CONFIG.btcAddress, "addr")} className="text-xs inline-flex items-center gap-1 text-[#5e5e5e] hover:text-[#222] flex-shrink-0">
-                    {copiedAddr ? <><CheckCircle2 className="w-4 h-4" /> Copied</> : <><Copy className="w-4 h-4" /> Copy</>}
+
+              <div className="flex flex-col sm:flex-row gap-4 items-start">
+                <div className="bg-white border border-[#e1e3df] rounded p-2 flex-shrink-0">
+                  <img src={m.qr} alt={`${m.name} QR code`} className="w-36 h-36 block" />
+                  <p className="text-[10px] text-center text-[#5e5e5e] mt-1">Scan to pay</p>
+                </div>
+                <div className="flex-1 w-full">
+                  <p className="text-xs text-[#5e5e5e] mb-1">Send to this {m.ticker} address ({m.network})</p>
+                  <div className="flex items-center gap-2 bg-white border border-[#e1e3df] rounded px-3 py-2 mb-2">
+                    <span className="font-mono text-sm break-all flex-1">{m.address}</span>
+                  </div>
+                  <button
+                    onClick={() => copy(m.address, "addr")}
+                    className="w-full text-sm inline-flex items-center justify-center gap-2 bg-[#222] text-white px-3 py-2 rounded hover:bg-black"
+                  >
+                    {copiedAddr ? <><CheckCircle2 className="w-4 h-4" /> Address copied</> : <><Copy className="w-4 h-4" /> Copy wallet address</>}
                   </button>
                 </div>
               </div>
+
               <p className="text-xs text-[#5e5e5e]">
-                The BTC amount is recalculated against the live rate. Please send the exact BTC value shown above to avoid order delays.
+                The {m.ticker} amount is recalculated against the live rate. Please send the exact amount shown above to avoid order delays.
+                {m.id === "usdt" && " Make sure you send via the TRC20 network."}
               </p>
             </div>
           </div>
@@ -192,7 +213,6 @@ function PaymentPage() {
           >
             {submitting ? "Processing…" : "Complete Payment"}
           </button>
-
 
           <div className="text-center">
             <Link to="/payment-other" className="text-sm text-[#a05c00] underline">
@@ -227,10 +247,9 @@ function PaymentPage() {
               <span>Total</span><span>USD {grandTotal.toFixed(2)}</span>
             </div>
             <div className="flex justify-between text-[#5e5e5e]">
-              <span>In BTC</span><span className="font-mono">{btcAmount}</span>
+              <span>In {m.ticker}</span><span className="font-mono">{cryptoAmount}</span>
             </div>
           </div>
-
         </aside>
       </div>
     </EtsyShell>

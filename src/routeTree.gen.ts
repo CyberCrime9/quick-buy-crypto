@@ -18,6 +18,7 @@ import { Route as IndexRouteImport } from './routes/index'
 import { Route as CheckoutIndexRouteImport } from './routes/checkout.index'
 import { Route as ProductIdRouteImport } from './routes/product.$id'
 import { Route as CheckoutPaymentRouteImport } from './routes/checkout.payment'
+import { Route as CheckoutMethodRouteImport } from './routes/checkout.method'
 
 const Char91indexChar93Route = Char91indexChar93RouteImport.update({
   id: '/index',
@@ -64,6 +65,11 @@ const CheckoutPaymentRoute = CheckoutPaymentRouteImport.update({
   path: '/payment',
   getParentRoute: () => CheckoutRoute,
 } as any)
+const CheckoutMethodRoute = CheckoutMethodRouteImport.update({
+  id: '/method',
+  path: '/method',
+  getParentRoute: () => CheckoutRoute,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -72,6 +78,7 @@ export interface FileRoutesByFullPath {
   '/index': typeof Char91indexChar93Route
   '/order-confirmed': typeof OrderConfirmedRoute
   '/payment-other': typeof PaymentOtherRoute
+  '/checkout/method': typeof CheckoutMethodRoute
   '/checkout/payment': typeof CheckoutPaymentRoute
   '/product/$id': typeof ProductIdRoute
   '/checkout/': typeof CheckoutIndexRoute
@@ -82,6 +89,7 @@ export interface FileRoutesByTo {
   '/index': typeof Char91indexChar93Route
   '/order-confirmed': typeof OrderConfirmedRoute
   '/payment-other': typeof PaymentOtherRoute
+  '/checkout/method': typeof CheckoutMethodRoute
   '/checkout/payment': typeof CheckoutPaymentRoute
   '/product/$id': typeof ProductIdRoute
   '/checkout': typeof CheckoutIndexRoute
@@ -94,6 +102,7 @@ export interface FileRoutesById {
   '/index': typeof Char91indexChar93Route
   '/order-confirmed': typeof OrderConfirmedRoute
   '/payment-other': typeof PaymentOtherRoute
+  '/checkout/method': typeof CheckoutMethodRoute
   '/checkout/payment': typeof CheckoutPaymentRoute
   '/product/$id': typeof ProductIdRoute
   '/checkout/': typeof CheckoutIndexRoute
@@ -107,6 +116,7 @@ export interface FileRouteTypes {
     | '/index'
     | '/order-confirmed'
     | '/payment-other'
+    | '/checkout/method'
     | '/checkout/payment'
     | '/product/$id'
     | '/checkout/'
@@ -117,6 +127,7 @@ export interface FileRouteTypes {
     | '/index'
     | '/order-confirmed'
     | '/payment-other'
+    | '/checkout/method'
     | '/checkout/payment'
     | '/product/$id'
     | '/checkout'
@@ -128,6 +139,7 @@ export interface FileRouteTypes {
     | '/index'
     | '/order-confirmed'
     | '/payment-other'
+    | '/checkout/method'
     | '/checkout/payment'
     | '/product/$id'
     | '/checkout/'
@@ -208,15 +220,24 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof CheckoutPaymentRouteImport
       parentRoute: typeof CheckoutRoute
     }
+    '/checkout/method': {
+      id: '/checkout/method'
+      path: '/method'
+      fullPath: '/checkout/method'
+      preLoaderRoute: typeof CheckoutMethodRouteImport
+      parentRoute: typeof CheckoutRoute
+    }
   }
 }
 
 interface CheckoutRouteChildren {
+  CheckoutMethodRoute: typeof CheckoutMethodRoute
   CheckoutPaymentRoute: typeof CheckoutPaymentRoute
   CheckoutIndexRoute: typeof CheckoutIndexRoute
 }
 
 const CheckoutRouteChildren: CheckoutRouteChildren = {
+  CheckoutMethodRoute: CheckoutMethodRoute,
   CheckoutPaymentRoute: CheckoutPaymentRoute,
   CheckoutIndexRoute: CheckoutIndexRoute,
 }
@@ -237,13 +258,3 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
-import type { getRouter } from './router.tsx'
-import type { startInstance } from './start.ts'
-declare module '@tanstack/react-start' {
-  interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
-    config: Awaited<ReturnType<typeof startInstance.getOptions>>
-  }
-}

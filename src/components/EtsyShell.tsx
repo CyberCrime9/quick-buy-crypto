@@ -4,7 +4,7 @@ import { ShoppingBag, ArrowLeft } from "lucide-react";
 import { useCart } from "@/lib/cart";
 import { PAYMENT_CONFIG } from "@/config/payment";
 
-type BackTarget = "/" | "/cart" | "/checkout" | "/checkout/payment";
+type BackTarget = "/" | "/cart" | "/checkout" | "/checkout/method" | "/checkout/payment";
 
 export function EtsyShell({
   children,
