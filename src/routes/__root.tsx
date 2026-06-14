@@ -78,14 +78,18 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
     meta: [
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1" },
-      { title: "Lovable App" },
-      { name: "description", content: "Lovable Generated Project" },
+      { title: "estys" },
+      { name: "description", content: "An e-commerce app enabling direct crypto payments for products, featuring detailed product pages and a streamlined checkout." },
       { name: "author", content: "Lovable" },
-      { property: "og:title", content: "Lovable App" },
-      { property: "og:description", content: "Lovable Generated Project" },
+      { property: "og:title", content: "estys" },
+      { property: "og:description", content: "An e-commerce app enabling direct crypto payments for products, featuring detailed product pages and a streamlined checkout." },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
       { name: "twitter:site", content: "@Lovable" },
+      { name: "twitter:title", content: "estys" },
+      { name: "twitter:description", content: "An e-commerce app enabling direct crypto payments for products, featuring detailed product pages and a streamlined checkout." },
+      { property: "og:image", content: "https://storage.googleapis.com/gpt-engineer-file-uploads/a4WA5cp1gGWyXwxBsDgoe9J34GJ3/social-images/social-1781409279165-Etsy_logo.svg.webp" },
+      { name: "twitter:image", content: "https://storage.googleapis.com/gpt-engineer-file-uploads/a4WA5cp1gGWyXwxBsDgoe9J34GJ3/social-images/social-1781409279165-Etsy_logo.svg.webp" },
     ],
     links: [
       {
