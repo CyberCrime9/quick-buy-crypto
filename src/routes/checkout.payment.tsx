@@ -17,7 +17,7 @@ export const Route = createFileRoute("/checkout/payment")({
 
 function PaymentPage() {
   const navigate = useNavigate();
-  const { method } = Route.useSearch();
+  const { method } = Route.useSearch() as { method: PaymentMethod };
   const m = PAYMENT_METHODS[method];
   const { items, subtotal } = useCart();
   const [rate, setRate] = useState<number | null>(null);
