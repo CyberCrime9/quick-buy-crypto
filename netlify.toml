@@ -1,7 +1,11 @@
 [build]
-  command = "bun run build"
-  publish = "dist/client"
+  command = "printf 'Using static Netlify export in public/netlify\\n'"
+  publish = "public/netlify"
 
 [build.environment]
-  NITRO_PRESET = "netlify"
   NODE_VERSION = "20"
+
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200
