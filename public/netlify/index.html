@@ -14,7 +14,10 @@
   </style>
 </head>
 <body>
-  <video class="bgVideo" src="assets/intro.mp4" autoplay muted loop playsinline preload="metadata" aria-hidden="true"></video>
+  <video class="bgVideo" autoplay muted loop playsinline preload="auto" aria-hidden="true">
+    <source src="assets/intro.webm" type="video/webm" />
+    <source src="assets/intro.mp4" type="video/mp4" />
+  </video>
   <div class="bgWash" aria-hidden="true"></div>
   <div id="app"></div>
   <script src="assets/products.js"></script>
